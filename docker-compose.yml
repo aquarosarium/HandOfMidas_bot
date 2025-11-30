@@ -1,0 +1,46 @@
+services:
+  bot:
+    build: .
+    container_name: hom_bot
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=hom_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - ./app:/app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hom_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - bot_network
+
+  postgres:
+    image: postgres:15
+    container_name: hom_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=hom_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bot_network
+
+volumes:
+  postgres_data:
+
+networks:
+  bot_network:
+    driver: bridge
