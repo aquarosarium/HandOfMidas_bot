@@ -443,22 +443,6 @@ async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message, reply_markup=get_cny_keyboard())
 
 
-async def show_delete_currency_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    currencies = get_user_currencies(chat_id)
-
-    if not currencies:
-        await update.message.reply_text(
-            "❌ У вас нет валютных балансов для удаления",
-            reply_markup=get_currencies_keyboard(),
-        )
-        return
-
-    await update.message.reply_text(
-        reply_markup=get_delete_currency_keyboard(currencies),
-    )
-
-
 async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
