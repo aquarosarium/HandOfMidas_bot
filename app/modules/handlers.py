@@ -12,17 +12,20 @@ from modules.database import (
     get_user_balance,
     get_user_currencies,
     reset_user_balance,
-    update_user_balance,
     update_user_currency,
+    get_user_usd,
+    get_user_cny,
 )
 from modules.keyboards import (
+    get_main_keyboard,
+    get_statistics_keyboard,
+    get_settings_keyboard,
+    get_balance_keyboard,
+    get_currencies_keyboard,
+    get_usd_keyboard,
+    get_cny_keyboard,
     get_cancel_keyboard,
     get_confirmation_keyboard,
-    get_currencies_keyboard,
-    get_delete_currency_keyboard,
-    get_main_keyboard,
-    get_settings_keyboard,
-    get_statistics_keyboard,
 )
 from modules.message_parser import parse_message
 from telegram import Update
@@ -62,22 +65,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Обработка кнопок
     button_handlers = {
         "📊 Статистика": show_statistics_menu,
-        "⚙️ Настройки": show_settings_menu,
         "📅 День": lambda u, c: show_statistics(u, c, "day"),
         "📆 Неделя": lambda u, c: show_statistics(u, c, "week"),
         "📈 Месяц": lambda u, c: show_statistics(u, c, "month"),
+        #
+        "⚙️ Настройки": show_settings_menu,
+        "💰 Ваш баланс": show_balance_menu,
         "💰 Установить баланс": start_set_balance,
         "🔄 Сбросить баланс": start_reset_balance,
+        #
         "💱 Валюты": show_currencies_menu,
+        "💵 USD": lambda u, c: show_usd_menu(u, c, "USD"),
+        "🗑️ Удалить USD": lambda u, c: delete_currency(u, c, "USD"),
+        "💴 CNY": lambda u, c: show_cny_menu(u, c, "CNY"),
+        "🗑️ Удалить CNY": lambda u, c: delete_currency(u, c, "CNY"),
+        "⬅️ Меню валют": show_currencies_menu,
+        #
         "🗑️ Сбросить все данные": start_delete_all_data,
         "⬅️ Назад": show_main_menu,
-        "❌ Отмена": cancel_operation,
-        "✅ ДА, удалить все": process_delete_all_data,
-        "💵 USD": lambda u, c: start_set_currency(u, c, "USD"),
-        "💴 CNY": lambda u, c: start_set_currency(u, c, "CNY"),
-        "🗑️ Удалить валюту": show_delete_currency_menu,
-        "❌ Удалить USD": lambda u, c: delete_currency(u, c, "USD"),
-        "❌ Удалить CNY": lambda u, c: delete_currency(u, c, "CNY"),
+        "❌ Нет": cancel_operation,
+        "✅ Да": process_delete_all_data,
     }
 
     if text in button_handlers:
@@ -95,7 +102,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Для удаления всех данных используем кнопку подтверждения
         await update.message.reply_text(
             "⚠️ Пожалуйста, используйте кнопки для подтверждения:\n"
-            "• '✅ ДА, удалить все' - для подтверждения удаления\n"
+            "• '✅ Да, удалить все' - для подтверждения удаления\n"
             "• '❌ Отмена' - для отмены",
             reply_markup=get_confirmation_keyboard(),
         )
@@ -143,8 +150,8 @@ async def show_statistics_menu(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    current_balance = get_user_balance(chat_id)
 
+    current_balance = get_user_balance(chat_id)
     transactions = get_transactions(chat_id)
     transactions_count = len(transactions)
 
@@ -171,7 +178,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     currencies = get_user_currencies(chat_id)
 
     # Формируем сообщение с балансами
-    message = f"Главное меню\n\n💵 Текущий баланс: {current_balance:.2f} руб."
+    message = f"Главное меню\n\n💵 Текущий баланс: {current_balance:.2f} ₽"
 
     # Добавляем валютные балансы, если они есть
     if currencies:
@@ -186,6 +193,23 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Функции для работы с балансом
+
+async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    current_balance = get_user_balance(chat_id)
+
+    message = "💱 Управление балансом\n\n"
+
+    if current_balance:
+        message += f"Текущий баланс: {current_balance:.2f} ₽"
+        current_balance = get_user_balance(chat_id)
+    else:
+        message += "У вас нет денег на счету\n"
+
+    message += "Выберите дальнейшее действие:"
+
+    await update.message.reply_text(message, reply_markup=get_balance_keyboard())
+    
 async def start_set_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
@@ -379,6 +403,46 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
 
+async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    currencies = get_user_usd(chat_id)
+
+    message - "Меню управления USD счётом\n\n"
+
+    if currencies:
+        message += "Ваш баланс:"
+        for currency in currencies:
+            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
+            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
+        message += "\n"
+    else:
+        message += "У вас нет валюты на этом счету"
+
+    message += "Выберите дальнейшие действия:"
+
+    await update.message.reply_text(message, reply_markup=get_usd_keyboard())
+
+
+async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    currencies = get_user_cny(chat_id)
+
+    message - "Меню управления CNY счётом\n\n"
+
+    if currencies:
+        message += "Ваш баланс:"
+        for currency in currencies:
+            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
+            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
+        message += "\n"
+    else:
+        message += "У вас нет валюты на этом счету"
+
+    message += "Выберите дальнейшие действия:"
+
+    await update.message.reply_text(message, reply_markup=get_cny_keyboard())
+
+
 async def show_delete_currency_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_currencies(chat_id)
@@ -395,14 +459,10 @@ async def show_delete_currency_menu(update: Update, context: ContextTypes.DEFAUL
     )
 
 
-async def start_set_currency(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str
-):
+async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
     context.user_data["setting_currency"] = currency
-
-    symbol = CURRENCY_SYMBOLS.get(currency, currency)
 
     await update.message.reply_text(
         f"💵 Установка баланса {currency}\n\n"
@@ -412,9 +472,7 @@ async def start_set_currency(
     )
 
 
-async def open_currency_balance(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str
-):
+async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
     try:
@@ -479,9 +537,7 @@ async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_T
         context.user_data.pop("setting_currency", None)
 
 
-async def delete_currency(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str
-):
+async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
     try:
@@ -508,28 +564,18 @@ async def delete_currency(
 
 
 # Функции для статистики
-async def show_statistics(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, period_type: str
-):
+async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, period_type: str):    # Отображение статистики
     try:
         chat_id = update.effective_chat.id
 
-        # Получаем даты периода
-        start_date, end_date, period_name = get_period_dates(period_type)
-        period_icon = get_period_icon(period_type)
+        start_date, end_date, period_name = get_period_dates(period_type)   # Получаем даты периода
+        period_icon = get_period_icon(period_type)  # Получаем иконки периоды
 
-        # Получаем данные
-        transactions = get_transactions_by_period(chat_id, start_date, end_date)
-        stats = calculate_statistics(transactions)
+        transactions = get_transactions_by_period(chat_id, start_date, end_date) # Получаем транзакции за период
+        stats = calculate_statistics(transactions)  # Вызываем функцию подсчёта статистики
 
-        # Для дневной статистики обновляем баланс
-        if period_type == "day":
-            current_balance = update_user_balance(chat_id, stats["daily_balance"])
-            balance_text = f"💵 Баланс: {current_balance:.2f} руб."
-        else:
-            # Для недели и месяца показываем только итог за период
-            current_balance = stats["daily_balance"]
-            balance_text = f"💵 Итого за период: {current_balance:.2f} руб."
+        net_income = stats["daily_balance"] #
+        net_income_text = f"💵 Итог за {period_name}: {net_income:.2f} ₽"
 
         # Получаем валютные балансы
         currencies = get_user_currencies(chat_id)
@@ -544,49 +590,28 @@ async def show_statistics(
         # Расходы
         if stats["expenses"]:
             message += "📤 Расходы:\n"
-            # Группируем по категориям для месячной статистики, для дня и недели показываем все
-            if period_type == "month":
-                expenses_by_category = {}
-                for expense in stats["expenses"]:
-                    category = expense.category
-                    if category not in expenses_by_category:
-                        expenses_by_category[category] = 0
-                    expenses_by_category[category] += expense.amount
+            for category, amount in stats['expenses']:
+                message += f"• {category}: {amount:.2f} ₽\n"
 
-                for category, amount in expenses_by_category.items():
-                    message += f"• {category}: {amount:.2f} руб.\n"
-            else:
-                for expense in stats["expenses"]:
-                    message += f"• {expense.category}: {expense.amount:.2f} руб.\n"
-
-            message += f"\n💰 Итого расходов за {period_name.split(' ')[0]}: {stats['total_expenses']:.2f} руб.\n\n"
+            message += f"\n💰 Итого расходов за {period_name.split(' ')[0]}: {stats['total_expenses']:.2f} ₽\n\n"
         else:
-            message += f"📤 Расходов за {period_name.split(' ')[0]} нет\n\n"
+            message += f"📤 Расходов за {period_name.split(' ')[0]} не было\n\n"
 
         # Доходы
         if stats["income"]:
             message += "📥 Доходы:\n"
-            # Группируем по категориям для месячной статистики
-            if period_type == "month":
-                income_by_category = {}
-                for income in stats["income"]:
-                    category = income.category
-                    if category not in income_by_category:
-                        income_by_category[category] = 0
-                    income_by_category[category] += income.amount
+            for category, amount in stats['income']:
+                message += f"• {category}: {amount:.2f} ₽\n"
 
-                for category, amount in income_by_category.items():
-                    message += f"• {category}: {amount:.2f} руб.\n"
-            else:
-                for income in stats["income"]:
-                    message += f"• {income.category}: {income.amount:.2f} руб.\n"
-
-            message += f"\n💳 Итого доходов за {period_name.split(' ')[0]}: {stats['total_income']:.2f} руб.\n\n"
+            message += f"\n💳 Итого доходов за {period_name.split(' ')[0]}: {stats['total_income']:.2f} ₽\n\n"
         else:
             message += f"📥 Доходов за {period_name.split(' ')[0]} нет\n\n"
 
+        message += f"📥 Чистый доход за сегодня: {net_income_text}\n\n"
+
         # Итог и валюты
-        message += balance_text + "\n"
+        current_balance = get_user_balance(chat_id)
+        message += f"Главное меню\n\n💵 Баланс: {current_balance:.2f} ₽"
         if currency_text:
             message += currency_text
 
@@ -600,57 +625,58 @@ async def show_statistics(
         )
 
 
-# Вспомогательные функции
-def calculate_statistics(transactions):
-    expenses_list = []
-    income_list = []
-    total_expenses = 0
-    total_income = 0
-
-    for transaction in transactions:
-        if transaction.type == "income":
-            income_list.append(transaction)
-            total_income += transaction.amount
+def calculate_statistics(transactions): # Рассчитывает статистику по расходам и доходам с группировкой по категориям
+    expenses_by_category = {}   # Расходы по категориям (я так понимаю)
+    income_by_category = {} # Поступления по категориям (я так понимаю)
+    total_expenses = 0  # Итоговые расходы
+    total_income = 0    # Итоговые доходы
+    
+    for transaction in transactions:    # Для транзакций из таблицы
+        if transaction.type == 'income':    # Если тип транзакции - поступление
+            category = transaction.category # Группируем расходы по категориям
+            if category not in income_by_category:  # Если категория не в списке
+                income_by_category[category] = 0    # Доход по категориям равен нулю
+            income_by_category[category] += transaction.amount  # Доход по категории += сумме транзакции
+            total_income += transaction.amount  # Итоговый доход += Сумме транзакции
         else:
-            expenses_list.append(transaction)
-            total_expenses += transaction.amount
-
-    daily_balance = total_income - total_expenses
-
-    return {
-        "expenses": expenses_list,
-        "income": income_list,
-        "total_expenses": total_expenses,
-        "total_income": total_income,
-        "daily_balance": daily_balance,
+            category = transaction.category # Группируем расходы по категориям
+            if category not in expenses_by_category:    # Если категория не в списке
+                expenses_by_category[category] = 0  # Расход по категориям равен нулю
+            expenses_by_category[category] += transaction.amount # Расход по категории += сумме транзакции
+            total_expenses += transaction.amount    # Итоговый расход += Сумме транзакции
+    
+    daily_balance = total_income - total_expenses   # Выхлоп за сегодня (чистый доход/расход)   доходы-расходы
+    
+    return {    # Возвращает
+        'expenses_by_category': expenses_by_category,   # Траты по категориям
+        'income_by_category': income_by_category,   # Доходы по категориям
+        'expenses': list(expenses_by_category.items()),  # Список кортежей (категория, сумма)
+        'income': list(income_by_category.items()), # Список кортежей (категория, сумма)
+        'total_expenses': total_expenses,   # Итоговые траты
+        'total_income': total_income,   # Итоговые доходы
+        'daily_balance': daily_balance # Выхлоп за сегодня (чистый доход/расход)
     }
 
 
-def get_period_dates(period_type):
-    """Возвращает даты начала и конца периода"""
+def get_period_dates(period_type):  # Получение периода трат для статистики
     today = datetime.now().date()
 
-    if period_type == "day":
+    if period_type == "day": 
         start_date = today
         end_date = today
-        period_name = f"сегодня ({today})"
+        period_name = f"Сегодня ({start_date} - {end_date})"
     elif period_type == "week":
         start_date = today - timedelta(days=7)
         end_date = today
-        period_name = f"неделю ({start_date} - {end_date})"
+        period_name = f"Неделю ({start_date} - {end_date})"
     elif period_type == "month":
         start_date = today.replace(day=1)
         end_date = today
-        period_name = f"текущий месяц ({start_date} - {end_date})"
-    else:
-        start_date = today
-        end_date = today
-        period_name = f"сегодня ({today})"
+        period_name = f"Месяц ({start_date} - {end_date})"
 
     return start_date, end_date, period_name
 
 
-def get_period_icon(period_type):
-    """Возвращает иконку для периода"""
+def get_period_icon(period_type): # Иконки периодов
     icons = {"day": "📅", "week": "📆", "month": "📈"}
     return icons.get(period_type, "📊")
