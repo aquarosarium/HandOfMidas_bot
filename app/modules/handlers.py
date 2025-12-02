@@ -57,7 +57,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Error in start command: {e}")
 
-
+# Обработка сообщения
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     chat_id = update.effective_chat.id
@@ -138,37 +138,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         logger.error(f"Database error for user {chat_id}: {e}")
 
-
-# Меню функции
-async def show_statistics_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает меню статистики"""
-    await update.message.reply_text(
-        "Выберите период для просмотра статистики:",
-        reply_markup=get_statistics_keyboard(),
-    )
-
-
-async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-
-    current_balance = get_user_balance(chat_id)
-    transactions = get_transactions(chat_id)
-    transactions_count = len(transactions)
-
-    # Получаем количество валют пользователя
-    currencies = get_user_currencies(chat_id)
-    currencies_count = len(currencies)
-
-    await update.message.reply_text(
-        f"⚙️ Настройки\n\n"
-        f"Текущий баланс: {current_balance:.2f} руб.\n"
-        f"Количество операций: {transactions_count}\n"
-        f"Количество валют: {currencies_count}\n\n"
-        f"Выберите действие:",
-        reply_markup=get_settings_keyboard(),
-    )
-
-
+# Главное меню
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает главное меню с балансами"""
     chat_id = update.effective_chat.id
@@ -191,9 +161,38 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(message, reply_markup=get_main_keyboard())
 
+# Меню статистики
+async def show_statistics_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает меню статистики"""
+    await update.message.reply_text(
+        "Выберите период для просмотра статистики:",
+        reply_markup=get_statistics_keyboard(),
+    )
 
-# Функции для работы с балансом
+# Меню настроек
+async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
 
+    current_balance = get_user_balance(chat_id)
+    transactions = get_transactions(chat_id)
+    transactions_count = len(transactions)
+
+    # Получаем количество валют пользователя
+    currencies = get_user_currencies(chat_id)
+    currencies_count = len(currencies)
+
+    await update.message.reply_text(
+        f"⚙️ Настройки\n\n"
+        f"Текущий баланс: {current_balance:.2f} руб.\n"
+        f"Количество операций: {transactions_count}\n"
+        f"Количество валют: {currencies_count}\n\n"
+        f"Выберите действие:",
+        reply_markup=get_settings_keyboard(),
+    )
+
+''' Функции для работы с балансом '''
+
+# Меню баланса
 async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
@@ -209,7 +208,8 @@ async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message += "Выберите дальнейшее действие:"
 
     await update.message.reply_text(message, reply_markup=get_balance_keyboard())
-    
+
+# Установка баланса
 async def start_set_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
@@ -224,7 +224,7 @@ async def start_set_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_cancel_keyboard(),
     )
 
-
+# Ввод баланса в базу данных? Надо проверить в /dev, пока не удаляем в мейн ветке
 async def process_balance_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -259,7 +259,7 @@ async def process_balance_input(update: Update, context: ContextTypes.DEFAULT_TY
         )
         context.user_data.pop("setting_balance", None)
 
-
+# Начало удаления баланса
 async def start_reset_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
@@ -275,7 +275,7 @@ async def start_reset_balance(update: Update, context: ContextTypes.DEFAULT_TYPE
         reply_markup=get_cancel_keyboard(),
     )
 
-
+# Удаление баланса
 async def process_reset_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text.strip().upper()
@@ -307,7 +307,9 @@ async def process_reset_balance(update: Update, context: ContextTypes.DEFAULT_TY
         )
 
 
-# Функции для работы с данными
+''' Функции для работы с данными '''
+
+# Начало удаления всех данных
 async def start_delete_all_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
 
@@ -331,7 +333,7 @@ async def start_delete_all_data(update: Update, context: ContextTypes.DEFAULT_TY
         reply_markup=get_confirmation_keyboard(),
     )
 
-
+# Удаление всех данных
 async def process_delete_all_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
 
@@ -364,7 +366,7 @@ async def process_delete_all_data(update: Update, context: ContextTypes.DEFAULT_
         )
         context.user_data.pop("deleting_all_data", None)
 
-
+# Отмена операции? Тоже надо проверить
 async def cancel_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Очищаем состояния
     context.user_data.pop("setting_balance", None)
@@ -382,7 +384,9 @@ async def cancel_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"✅ User {chat_id} cancelled operation")
 
 
-# Функции для работы с валютами
+''' Функции для работы с валютами '''
+
+# Меню валют
 async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_currencies(chat_id)
@@ -402,7 +406,7 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
-
+# Меню доллара
 async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_usd(chat_id)
@@ -422,7 +426,7 @@ async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(message, reply_markup=get_usd_keyboard())
 
-
+# Меню йены
 async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_cny(chat_id)
@@ -442,7 +446,7 @@ async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(message, reply_markup=get_cny_keyboard())
 
-
+# Установка валюты. Не уверен надо ли, требует проверки
 async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -455,7 +459,7 @@ async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE,
         reply_markup=get_cancel_keyboard(),
     )
 
-
+# Открытие валютного счёта. Тоже непонятно
 async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -481,7 +485,7 @@ async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_currencies_keyboard(),
         )
 
-
+# Ввод валюты. Нужно ли оно?
 async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -520,7 +524,7 @@ async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_T
         )
         context.user_data.pop("setting_currency", None)
 
-
+# Удаление валюты
 async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -547,9 +551,10 @@ async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, cu
         )
 
 
-# Функции для статистики
-async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, period_type: str):    # Отображение статистики
-    try:
+''' Функции для статистики '''
+
+# Отрисовка статистики
+async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, period_type: str):
         chat_id = update.effective_chat.id
 
         start_date, end_date, period_name = get_period_dates(period_type)   # Получаем даты периода
@@ -601,15 +606,15 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
 
         await update.message.reply_text(message, reply_markup=get_statistics_keyboard())
         logger.info(f"✅ User {chat_id} viewed {period_type} statistics")
-
+        
     except Exception as e:
         logger.error(f"Error in {period_type} statistics for user {chat_id}: {e}")
         await update.message.reply_text(
             "❌ Ошибка при получении статистики", reply_markup=get_statistics_keyboard()
         )
 
-
-def calculate_statistics(transactions): # Рассчитывает статистику по расходам и доходам с группировкой по категориям
+# Рассчёт статистики
+def calculate_statistics(transactions):
     expenses_by_category = {}   # Расходы по категориям (я так понимаю)
     income_by_category = {} # Поступления по категориям (я так понимаю)
     total_expenses = 0  # Итоговые расходы
@@ -641,8 +646,8 @@ def calculate_statistics(transactions): # Рассчитывает статис�
         'daily_balance': daily_balance # Выхлоп за сегодня (чистый доход/расход)
     }
 
-
-def get_period_dates(period_type):  # Получение периода трат для статистики
+#Получение периода для рассчёта статистики
+def get_period_dates(period_type):
     today = datetime.now().date()
 
     if period_type == "day": 
@@ -660,7 +665,7 @@ def get_period_dates(period_type):  # Получение периода трат
 
     return start_date, end_date, period_name
 
-
-def get_period_icon(period_type): # Иконки периодов
+# Иконки для периода. Непонятно, надо ли так оставить
+def get_period_icon(period_type):
     icons = {"day": "📅", "week": "📆", "month": "📈"}
     return icons.get(period_type, "📊")

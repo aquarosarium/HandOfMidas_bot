@@ -1,11 +1,9 @@
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
-
 # Главное меню
 def get_main_keyboard():
     keyboard = [[KeyboardButton("📊 Статистика")], [KeyboardButton("⚙️ Настройки")]]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
 
 # Меню статистики
 def get_statistics_keyboard():
@@ -16,7 +14,6 @@ def get_statistics_keyboard():
         [KeyboardButton("⬅️ Назад")],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
 
 # Меню настроек
 def get_settings_keyboard():
@@ -46,7 +43,7 @@ def get_currencies_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
-
+# Меню доллара
 def get_usd_keyboard():
     keyboard = [
         [KeyboardButton("💵 Добавить USD")],
@@ -55,6 +52,7 @@ def get_usd_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+# Меню юани
 def get_cny_keyboard():
     keyboard = [
         [KeyboardButton("💴 Добавить CNY")],

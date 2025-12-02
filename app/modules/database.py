@@ -83,7 +83,8 @@ init_db()
 
 Session = sessionmaker(bind=engine)
 
-def add_transaction(chat_id, date, category, amount, is_income): # Добавляем операцию в бд
+# Добавление транзакции в бд
+def add_transaction(chat_id, date, category, amount, is_income):
     try:
         session = Session() # Начинаем сессию
         transaction_type = "income" if is_income else "expense" # Определяем тип операции
@@ -121,7 +122,7 @@ def add_transaction(chat_id, date, category, amount, is_income): # Добавл�
         logger.error(f"❌ Error adding transaction: {e}")
         raise
 
-
+# Получение транзакций из бд (надо удалить из /dev ветки)
 def get_transactions(chat_id):
     """Получает все операции пользователя"""
     try:
@@ -139,7 +140,7 @@ def get_transactions(chat_id):
         logger.error(f"❌ Error getting transactions: {e}")
         raise
 
-
+# Получение транзакций по периоду
 def get_transactions_by_period(chat_id, start_date, end_date):
     """Получить операции за определенный период"""
     try:
@@ -159,7 +160,7 @@ def get_transactions_by_period(chat_id, start_date, end_date):
         logger.error(f"❌ Error getting transactions by period: {e}")
         raise
 
-
+# Получение баланса юзера 
 def get_user_balance(chat_id):
     """Получить баланс пользователя (рубли)"""
     try:
@@ -177,7 +178,7 @@ def get_user_balance(chat_id):
         logger.error(f"❌ Error getting user balance: {e}")
         raise
 
-
+# Сброс баланса юзера
 def reset_user_balance(chat_id, new_balance=0):
     """Сбросить баланс пользователя"""
     try:
@@ -207,7 +208,7 @@ def reset_user_balance(chat_id, new_balance=0):
         logger.error(f"❌ Error resetting user balance: {e}")
         raise
 
-
+# Сброс всех данных о юзере из бд
 def delete_all_user_data(chat_id):
     """Удалить все данные пользователя (операции и балансы)"""
     try:
@@ -241,7 +242,9 @@ def delete_all_user_data(chat_id):
         raise
 
 
-# Функции для раб4оты с валютами
+''' Функции для работы с валютами '''
+
+# Получение списка валют юзера
 def get_user_currencies(chat_id):
     """Получить все валютные балансы пользователя"""
     try:
@@ -257,7 +260,7 @@ def get_user_currencies(chat_id):
         logger.error(f"❌ Error getting user currencies: {e}")
         raise
 
-
+# Получение доллара юзера
 def get_user_usd(chat_id):
     """Получить все валютные балансы пользователя"""
     try:
@@ -274,7 +277,7 @@ def get_user_usd(chat_id):
         logger.error(f"❌ Error getting user currencies: {e}")
         raise
 
-
+# Получение йен юзера
 def get_user_cny(chat_id):
     """Получить все валютные балансы пользователя"""
     try:
@@ -291,7 +294,7 @@ def get_user_cny(chat_id):
         logger.error(f"❌ Error getting user currencies: {e}")
         raise
 
-
+# Обновление валюты
 def update_user_currency(chat_id, currency, amount):
     """Обновить или создать валютный баланс пользователя"""
     try:
@@ -332,8 +335,8 @@ def update_user_currency(chat_id, currency, amount):
         logger.error(f"❌ Error updating user currency: {e}")
         raise
 
-
-def delete_user_currency(chat_id, currency):    # Удаление валютного баланса
+# Удаление валюты
+def delete_user_currency(chat_id, currency):
     try:
         session = Session()
 
@@ -353,7 +356,7 @@ def delete_user_currency(chat_id, currency):    # Удаление валютн�
         logger.error(f"❌ Error deleting user currency: {e}")
         raise
 
-
+# Создание валютного баланса
 def create_currency_balance(chat_id, currency):
     """Создает валютный баланс пользователя с нулевым значением"""
     try:
