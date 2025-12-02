@@ -200,7 +200,7 @@ async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = "💱 Управление балансом\n\n"
 
     if current_balance:
-        message += f"Текущий баланс: {current_balance:.2f} ₽"
+        message += f"Текущий баланс: {current_balance:.2f} ₽\n"
         current_balance = get_user_balance(chat_id)
     else:
         message += "У вас нет денег на счету\n"
@@ -411,7 +411,7 @@ async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_usd(chat_id)
 
-    message - "Меню управления USD счётом\n\n"
+    message = "Меню управления USD счётом\n\n"
 
     if currencies:
         message += "Ваш баланс:"
@@ -431,7 +431,7 @@ async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_cny(chat_id)
 
-    message - "Меню управления CNY счётом\n\n"
+    message = "Меню управления CNY счётом\n\n"
 
     if currencies:
         message += "Ваш баланс:"
@@ -555,6 +555,7 @@ async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, cu
 
 # Отрисовка статистики
 async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, period_type: str):
+    try:
         chat_id = update.effective_chat.id
 
         start_date, end_date, period_name = get_period_dates(period_type)   # Получаем даты периода
@@ -564,7 +565,7 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         stats = calculate_statistics(transactions)  # Вызываем функцию подсчёта статистики
 
         net_income = stats["daily_balance"] #
-        net_income_text = f"💵 Итог за {period_name}: {net_income:.2f} ₽"
+        net_income_text = f"{net_income:.2f} ₽"
 
         # Получаем валютные балансы
         currencies = get_user_currencies(chat_id)
@@ -606,7 +607,7 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
 
         await update.message.reply_text(message, reply_markup=get_statistics_keyboard())
         logger.info(f"✅ User {chat_id} viewed {period_type} statistics")
-        
+
     except Exception as e:
         logger.error(f"Error in {period_type} statistics for user {chat_id}: {e}")
         await update.message.reply_text(
