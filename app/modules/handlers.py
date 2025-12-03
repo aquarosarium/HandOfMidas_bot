@@ -76,11 +76,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #
         "💱 Валюты": show_currencies_menu,
         "💵 USD": lambda u, c: show_usd_menu(u, c, "USD"),
-        "💵 Добавить USD": lambda u, c: set_user_currency(),
-        "🗑️ Удалить USD": lambda u, c: delete_user_currency(u, c, "USD"),
-        "💴 CNY": lambda u, c: show_cny_menu(u, c, "CNY"),
-        "💴 Добавить CNY": lambda u, c: set_user_currency(),
-        "🗑️ Удалить CNY": lambda u, c: delete_user_currency(u, c, "CNY"),
+        "💵 Добавить USD": lambda u, c: set_user_currency(u, c, currency="USD"),
+        "🗑️ Удалить USD": lambda u, c: delete_user_currency(chat_id, "USD"),
+        "💴 CNY": lambda u, c: show_cny_menu(u, c),
+        "💴 Добавить CNY": lambda u, c: set_user_currency(u, c, currency="CNY"),
+        "🗑️ Удалить CNY": delete_user_currency(chat_id, "CNY"),
         "⬅️ Меню валют": show_currencies_menu,
         #
         "🗑️ Сбросить все данные": start_delete_all_data,
@@ -408,6 +408,7 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
+
 async def show_currency(update: Update):
     chat_id = update.effective_chat.id
     currencies = get_user_usd(chat_id)
@@ -418,7 +419,7 @@ async def show_currency(update: Update):
             message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
         message += "\n"
     else:
-        message = "У вас нет валюты на этом счету"
+        message = "У вас нет валюты на этом счету\n\n"
     return message
 
 # Меню доллара
@@ -426,7 +427,7 @@ async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, curr
     chat_id = update.effective_chat.id
 
     message = "Меню управления USD счётом\n\n"
-    message += show_currency()
+    message += await show_currency(update)
     message += "Выберите дальнейшие действия:"
 
     await update.message.reply_text(message, reply_markup=get_usd_keyboard())
@@ -617,7 +618,7 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
 
         # Итог и валюты
         current_balance = get_user_balance(chat_id)
-        message += f"Главное меню\n\n💵 Баланс: {current_balance:.2f} ₽"
+        message += f"Главное меню\n\n💵 Баланс: {current_balance:.2f} ₽\n\n"
         if currency_text:
             message += currency_text
 

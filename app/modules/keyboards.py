@@ -1,4 +1,4 @@
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram import KeyboardButton, ReplyKeyboardMarkup # type: ignore
 
 # Главное меню
 def get_main_keyboard():
@@ -47,7 +47,7 @@ def get_currencies_keyboard():
 def get_usd_keyboard():
     keyboard = [
         [KeyboardButton("💵 Добавить USD")],
-        [KeyboardButton("🗑️ Удалить USD")],
+    #    [KeyboardButton("🗑️ Удалить USD")],
         [KeyboardButton("⬅️ Меню валют")],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -56,7 +56,7 @@ def get_usd_keyboard():
 def get_cny_keyboard():
     keyboard = [
         [KeyboardButton("💴 Добавить CNY")],
-        [KeyboardButton("🗑️ Удалить CNY")],
+    #    [KeyboardButton("🗑️ Удалить CNY")],
         [KeyboardButton("⬅️ Меню валют")],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
