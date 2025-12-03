@@ -2,10 +2,10 @@ import logging
 import time
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, Date, Numeric, String, create_engine
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import BigInteger, Column, Date, Numeric, String, create_engine # type: ignore
+from sqlalchemy.exc import OperationalError # type: ignore
+from sqlalchemy.ext.declarative import declarative_base # type: ignore
+from sqlalchemy.orm import sessionmaker # type: ignore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -87,6 +87,11 @@ Session = sessionmaker(bind=engine)
 def add_transaction(chat_id, date, category, amount, is_income):
     try:
         session = Session() # Начинаем сессию
+
+        from decimal import Decimal
+        if isinstance(amount, float):
+            amount = Decimal(str(amount))
+
         transaction_type = "income" if is_income else "expense" # Определяем тип операции
 
         transaction = Transaction( # Определяем транзакцию
@@ -178,7 +183,7 @@ def get_user_balance(chat_id):
         logger.error(f"❌ Error getting user balance: {e}")
         raise
 
-# Сброс баланса юзера
+# Сброс баланса юзера (ПОСОС ФУНКЦИЯ)
 def reset_user_balance(chat_id, new_balance=0):
     """Сбросить баланс пользователя"""
     try:
