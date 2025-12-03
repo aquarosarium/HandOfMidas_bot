@@ -76,14 +76,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #
         "💱 Валюты": show_currencies_menu,
         "💵 USD": lambda u, c: show_usd_menu(u, c, "USD"),
+        "💵 Добавить USD": lambda u, c: set_user_currency(),
         "🗑️ Удалить USD": lambda u, c: delete_user_currency(u, c, "USD"),
         "💴 CNY": lambda u, c: show_cny_menu(u, c, "CNY"),
+        "💴 Добавить CNY": lambda u, c: set_user_currency(),
         "🗑️ Удалить CNY": lambda u, c: delete_user_currency(u, c, "CNY"),
         "⬅️ Меню валют": show_currencies_menu,
         #
         "🗑️ Сбросить все данные": start_delete_all_data,
         "⬅️ Назад": show_main_menu,
-        "❌ Нет": cancel_operation,
+        "❌ Отмена": cancel_operation,
         "✅ Да": process_delete_all_data,
     }
 
@@ -424,7 +426,7 @@ async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, curr
     chat_id = update.effective_chat.id
 
     message = "Меню управления USD счётом\n\n"
-    message += show_currency(u)
+    message += show_currency()
     message += "Выберите дальнейшие действия:"
 
     await update.message.reply_text(message, reply_markup=get_usd_keyboard())
@@ -449,18 +451,29 @@ async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(message, reply_markup=get_cny_keyboard())
 
-# Установка валюты. Не уверен надо ли, требует проверки
-async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
+# Установка счёта
+async def set_user_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
-
+    
     context.user_data["setting_currency"] = currency
 
-    await update.message.reply_text(
-        f"💵 Установка баланса {currency}\n\n"
-        f"Введите сумму в {currency} (например: 100 или 150.50):\n"
-        f"Или нажмите '❌ Отмена' для возврата",
-        reply_markup=get_cancel_keyboard(),
-    )
+    try:
+        current_balance = create_currency_balance(chat_id, currency)
+        symbol = CURRENCY_SYMBOLS.get(currency, currency)
+        await update.message.reply_text(
+            f"💵 Установка баланса {currency}\n\n"
+            f"Введите сумму в {currency} (например: 100 или 150.50):\n"
+            f"Или нажмите '❌ Отмена' для возврата",
+            reply_markup=get_cancel_keyboard(),
+        )
+        logger.info(f"✅ User {chat_id} opened {currency} balance: {current_balance}")
+
+    except Exception as e:
+        logger.error(f"Error opening {currency} balance for user {chat_id}: {e}")
+        await update.message.reply_text(
+            f"❌ Произошла ошибка при открытии баланса {currency}",
+            reply_markup=get_currencies_keyboard(),
+        )
 
 # Открытие валютного счёта. Тоже непонятно
 async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):

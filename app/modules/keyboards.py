@@ -63,7 +63,7 @@ def get_cny_keyboard():
 
 # Клавиатура для отмены действия
 def get_cancel_keyboard():
-    keyboard = [[KeyboardButton("❌ Нет")]]
+    keyboard = [[KeyboardButton("❌ Отмена")]]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Клавиатура для подтверждения опасных действий
