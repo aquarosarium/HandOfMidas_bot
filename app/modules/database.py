@@ -2,10 +2,10 @@ import logging
 import time
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, Date, Numeric, String, create_engine
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import BigInteger, Column, Date, Numeric, String, create_engine # type: ignore
+from sqlalchemy.exc import OperationalError # type: ignore
+from sqlalchemy.ext.declarative import declarative_base # type: ignore
+from sqlalchemy.orm import sessionmaker # type: ignore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class UserCurrency(Base):
     __tablename__ = "user_currencies"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     chat_id = Column(BigInteger, nullable=False)
-    currency = Column(String, nullable=False)  # 'USD', 'CNY'
+    currency = Column(String, nullable=False)  #'USD', 'CNY'
     amount = Column(Numeric(10, 2), default=0)
     last_updated = Column(Date)
 
@@ -83,15 +83,18 @@ init_db()
 
 Session = sessionmaker(bind=engine)
 
-
-# Функции для работы с БД
+# Добавление транзакции в бд
 def add_transaction(chat_id, date, category, amount, is_income):
-    """Добавляет операцию (доход или расход)"""
     try:
-        session = Session()
-        transaction_type = "income" if is_income else "expense"
+        session = Session() # Начинаем сессию
 
-        transaction = Transaction(
+        from decimal import Decimal
+        if isinstance(amount, float):
+            amount = Decimal(str(amount))
+
+        transaction_type = "income" if is_income else "expense" # Определяем тип операции
+
+        transaction = Transaction( # Определяем транзакцию
             chat_id=chat_id,
             date=date,
             category=category,
@@ -99,6 +102,22 @@ def add_transaction(chat_id, date, category, amount, is_income):
             type=transaction_type,
         )
         session.add(transaction)
+
+        today = datetime.now().date()
+        
+        balance_record = session.query(UserBalance).filter(UserBalance.chat_id == chat_id).first() # Ищем существующий баланс
+        
+        balance_change = amount if is_income else -amount         # Рассчитываем изменение баланса ДОХОД: +amount, РАСХОД: -amount
+        
+        if balance_record:  #Если существует запись баланса
+            balance_record.balance += balance_change # Обновляем существующий баланс
+        else:   #Иначе
+            balance_record = UserBalance(             # Создаем новый баланс
+                chat_id=chat_id,    # Передаём chat id
+                balance=balance_change,     # Передаём изменение баланса
+            )
+            session.add(balance_record) # Добавляем
+
         session.commit()
         session.close()
         logger.info(
@@ -108,13 +127,17 @@ def add_transaction(chat_id, date, category, amount, is_income):
         logger.error(f"❌ Error adding transaction: {e}")
         raise
 
-
+# Получение транзакций из бд (надо удалить из /dev ветки)
 def get_transactions(chat_id):
     """Получает все операции пользователя"""
     try:
         session = Session()
         transactions = (
-            session.query(Transaction).filter(Transaction.chat_id == chat_id).all()
+            session.query(Transaction)
+            .filter(
+                Transaction.chat_id == chat_id
+                )
+                .all()
         )
         session.close()
         return transactions
@@ -122,7 +145,7 @@ def get_transactions(chat_id):
         logger.error(f"❌ Error getting transactions: {e}")
         raise
 
-
+# Получение транзакций по периоду
 def get_transactions_by_period(chat_id, start_date, end_date):
     """Получить операции за определенный период"""
     try:
@@ -142,7 +165,7 @@ def get_transactions_by_period(chat_id, start_date, end_date):
         logger.error(f"❌ Error getting transactions by period: {e}")
         raise
 
-
+# Получение баланса юзера 
 def get_user_balance(chat_id):
     """Получить баланс пользователя (рубли)"""
     try:
@@ -160,42 +183,7 @@ def get_user_balance(chat_id):
         logger.error(f"❌ Error getting user balance: {e}")
         raise
 
-
-def update_user_balance(chat_id, daily_balance):
-    """Обновить баланс пользователя с учетом операций за день"""
-    try:
-        session = Session()
-        today = datetime.now().date()
-
-        # Получаем текущий баланс
-        balance_record = (
-            session.query(UserBalance).filter(UserBalance.chat_id == chat_id).first()
-        )
-
-        if balance_record:
-            # Обновляем существующую запись
-            new_balance = balance_record.balance + daily_balance
-            balance_record.balance = new_balance
-            balance_record.last_updated = today
-        else:
-            # Создаем новую запись
-            new_balance = daily_balance
-            balance_record = UserBalance(
-                chat_id=chat_id, balance=new_balance, last_updated=today
-            )
-            session.add(balance_record)
-
-        session.commit()
-        session.close()
-
-        logger.info(f"✅ User {chat_id} balance updated: {new_balance}")
-        return new_balance
-
-    except OperationalError as e:
-        logger.error(f"❌ Error updating user balance: {e}")
-        raise
-
-
+# Сброс баланса юзера (ПОСОС ФУНКЦИЯ)
 def reset_user_balance(chat_id, new_balance=0):
     """Сбросить баланс пользователя"""
     try:
@@ -225,7 +213,7 @@ def reset_user_balance(chat_id, new_balance=0):
         logger.error(f"❌ Error resetting user balance: {e}")
         raise
 
-
+# Сброс всех данных о юзере из бд
 def delete_all_user_data(chat_id):
     """Удалить все данные пользователя (операции и балансы)"""
     try:
@@ -259,13 +247,17 @@ def delete_all_user_data(chat_id):
         raise
 
 
-# Функции для работы с валютами
+''' Функции для работы с валютами '''
+
+# Получение списка валют юзера
 def get_user_currencies(chat_id):
     """Получить все валютные балансы пользователя"""
     try:
         session = Session()
         currencies = (
-            session.query(UserCurrency).filter(UserCurrency.chat_id == chat_id).all()
+            session.query(UserCurrency)
+            .filter(UserCurrency.chat_id == chat_id)
+            .all()
         )
         session.close()
         return currencies
@@ -273,7 +265,41 @@ def get_user_currencies(chat_id):
         logger.error(f"❌ Error getting user currencies: {e}")
         raise
 
+# Получение доллара юзера
+def get_user_usd(chat_id):
+    """Получить все валютные балансы пользователя"""
+    try:
+        session = Session()
+        currencies = (
+            session.query(UserCurrency)
+            .filter(UserCurrency.chat_id == chat_id)
+            .filter(UserCurrency.currency == 'USD')
+            .all()
+        )
+        session.close()
+        return currencies
+    except OperationalError as e:
+        logger.error(f"❌ Error getting user currencies: {e}")
+        raise
 
+# Получение йен юзера
+def get_user_cny(chat_id):
+    """Получить все валютные балансы пользователя"""
+    try:
+        session = Session()
+        currencies = (
+            session.query(UserCurrency)
+            .filter(UserCurrency.chat_id == chat_id)
+            .filter(UserCurrency.currency == 'CNY')
+            .all()
+        )
+        session.close()
+        return currencies
+    except OperationalError as e:
+        logger.error(f"❌ Error getting user currencies: {e}")
+        raise
+
+# Обновление валюты
 def update_user_currency(chat_id, currency, amount):
     """Обновить или создать валютный баланс пользователя"""
     try:
@@ -314,9 +340,8 @@ def update_user_currency(chat_id, currency, amount):
         logger.error(f"❌ Error updating user currency: {e}")
         raise
 
-
+# Удаление валюты
 def delete_user_currency(chat_id, currency):
-    """Удалить валютный баланс пользователя"""
     try:
         session = Session()
 
@@ -336,52 +361,7 @@ def delete_user_currency(chat_id, currency):
         logger.error(f"❌ Error deleting user currency: {e}")
         raise
 
-
-# Добавьте эту функцию в database.py после существующих функций
-
-
-def add_to_currency_balance(chat_id, currency, amount):
-    """Пополняет валютный баланс пользователя"""
-    try:
-        session = Session()
-        today = datetime.now().date()
-
-        # Ищем существующую запись
-        currency_record = (
-            session.query(UserCurrency)
-            .filter(UserCurrency.chat_id == chat_id, UserCurrency.currency == currency)
-            .first()
-        )
-
-        if currency_record:
-            # Обновляем существующую запись - добавляем сумму
-            new_balance = currency_record.amount + amount
-            currency_record.amount = new_balance
-            currency_record.last_updated = today
-        else:
-            # Создаем новую запись
-            new_balance = amount
-            currency_record = UserCurrency(
-                chat_id=chat_id,
-                currency=currency,
-                amount=new_balance,
-                last_updated=today,
-            )
-            session.add(currency_record)
-
-        session.commit()
-        session.close()
-
-        logger.info(
-            f"✅ User {chat_id} {currency} balance updated: +{amount} = {new_balance}"
-        )
-        return new_balance
-
-    except OperationalError as e:
-        logger.error(f"❌ Error adding to user currency: {e}")
-        raise
-
-
+# Создание валютного баланса
 def create_currency_balance(chat_id, currency):
     """Создает валютный баланс пользователя с нулевым значением"""
     try:
