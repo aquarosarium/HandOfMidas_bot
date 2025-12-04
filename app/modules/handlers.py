@@ -13,8 +13,6 @@ from modules.database import (
     get_user_currencies,
     reset_user_balance,
     update_user_currency,
-    get_user_usd,
-    get_user_cny,
 )
 from modules.keyboards import (
     get_main_keyboard,
@@ -22,8 +20,7 @@ from modules.keyboards import (
     get_settings_keyboard,
     get_balance_keyboard,
     get_currencies_keyboard,
-    get_usd_keyboard,
-    get_cny_keyboard,
+    get_delete_currency_keyboard,
     get_cancel_keyboard,
     get_confirmation_keyboard,
 )
@@ -75,13 +72,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔄 Сбросить баланс": start_reset_balance,
         #
         "💱 Валюты": show_currencies_menu,
-        "💵 USD": lambda u, c: show_usd_menu(u, c, "USD"),
-        "💵 Добавить USD": lambda u, c: set_user_currency(u, c, currency="USD"),
-        "🗑️ Удалить USD": lambda u, c: delete_user_currency(chat_id, "USD"),
-        "💴 CNY": lambda u, c: show_cny_menu(u, c),
-        "💴 Добавить CNY": lambda u, c: set_user_currency(u, c, currency="CNY"),
-        "🗑️ Удалить CNY": delete_user_currency(chat_id, "CNY"),
-        "⬅️ Меню валют": show_currencies_menu,
+        "💵 USD": lambda u, c: start_set_currency(u, c, "USD"),
+        "💴 CNY": lambda u, c: start_set_currency(u, c, "CNY"),
+        "🗑️ Удалить валюту": show_delete_currency_menu,
+        "❌ Удалить USD": lambda u, c: delete_currency(u, c, "USD"),
+        "❌ Удалить CNY": lambda u, c: delete_currency(u, c, "CNY"),
         #
         "🗑️ Сбросить все данные": start_delete_all_data,
         "⬅️ Назад": show_main_menu,
@@ -388,8 +383,7 @@ async def cancel_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ''' Функции для работы с валютами '''
 
-# Меню валют
-async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str = "USD"):
+async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_currencies(chat_id)
 
@@ -409,74 +403,37 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
 
-async def show_currency(update: Update):
+async def show_delete_currency_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    currencies = get_user_usd(chat_id)
-    if currencies:
-        message = "Ваш баланс:"
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
-        message += "\n"
-    else:
-        message = "У вас нет валюты на этом счету\n\n"
-    return message
+    currencies = get_user_currencies(chat_id)
 
-# Меню доллара
-async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
-    chat_id = update.effective_chat.id
-
-    message = "Меню управления USD счётом\n\n"
-    message += await show_currency(update)
-    message += "Выберите дальнейшие действия:"
-
-    await update.message.reply_text(message, reply_markup=get_usd_keyboard())
-
-# Меню йены
-async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    currencies = get_user_cny(chat_id)
-
-    message = "Меню управления CNY счётом\n\n"
-
-    if currencies:
-        message += "Ваш баланс:"
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
-        message += "\n"
-    else:
-        message += "У вас нет валюты на этом счету"
-
-    message += "Выберите дальнейшие действия:"
-
-    await update.message.reply_text(message, reply_markup=get_cny_keyboard())
-
-# Установка счёта
-async def set_user_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
-    chat_id = update.effective_chat.id
-    
-    context.user_data["setting_currency"] = currency
-
-    try:
-        current_balance = create_currency_balance(chat_id, currency)
-        symbol = CURRENCY_SYMBOLS.get(currency, currency)
+    if not currencies:
         await update.message.reply_text(
-            f"💵 Установка баланса {currency}\n\n"
-            f"Введите сумму в {currency} (например: 100 или 150.50):\n"
-            f"Или нажмите '❌ Отмена' для возврата",
-            reply_markup=get_cancel_keyboard(),
-        )
-        logger.info(f"✅ User {chat_id} opened {currency} balance: {current_balance}")
-
-    except Exception as e:
-        logger.error(f"Error opening {currency} balance for user {chat_id}: {e}")
-        await update.message.reply_text(
-            f"❌ Произошла ошибка при открытии баланса {currency}",
+            "❌ У вас нет валютных балансов для удаления",
             reply_markup=get_currencies_keyboard(),
         )
+        return
 
-# Открытие валютного счёта. Тоже непонятно
+    await update.message.reply_text(
+        reply_markup=get_delete_currency_keyboard(currencies),
+    )
+
+
+async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
+    chat_id = update.effective_chat.id
+
+    context.user_data["setting_currency"] = currency
+
+    symbol = CURRENCY_SYMBOLS.get(currency, currency)
+
+    await update.message.reply_text(
+        f"💵 Установка баланса {currency}\n\n"
+        f"Введите сумму в {currency} (например: 100 или 150.50):\n"
+        f"Или нажмите '❌ Отмена' для возврата",
+        reply_markup=get_cancel_keyboard(),
+    )
+
+
 async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -502,7 +459,7 @@ async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_currencies_keyboard(),
         )
 
-# Ввод валюты. Нужно ли оно?
+
 async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -541,7 +498,7 @@ async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_T
         )
         context.user_data.pop("setting_currency", None)
 
-# Удаление валюты
+
 async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -566,7 +523,6 @@ async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, cu
             f"❌ Произошла ошибка при удалении баланса {currency}",
             reply_markup=get_currencies_keyboard(),
         )
-
 
 ''' Функции для статистики '''
 
