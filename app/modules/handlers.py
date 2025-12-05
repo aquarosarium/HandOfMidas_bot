@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 SETTING_BALANCE, RESETTING_BALANCE, DELETING_ALL_DATA, SETTING_CURRENCY = range(4)
 
-# Словарь символов валют
 CURRENCY_SYMBOLS = {"USD": "$", "CNY": "¥"}
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -532,51 +530,64 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         chat_id = update.effective_chat.id
 
         start_date, end_date, period_name = get_period_dates(period_type)   # Получаем даты периода
-        period_icon = get_period_icon(period_type)  # Получаем иконки периоды
 
         transactions = get_transactions_by_period(chat_id, start_date, end_date) # Получаем транзакции за период
         stats = calculate_statistics(transactions)  # Вызываем функцию подсчёта статистики
 
-        net_income = stats["daily_balance"] #
-        net_income_text = f"{net_income:.2f} ₽"
-
-        # Получаем валютные балансы
-        currencies = get_user_currencies(chat_id)
-        currency_text = ""
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            currency_text += f"💵 {currency.currency}: {currency.amount:.2f}{symbol}\n"
-
-        # Формируем сообщение
-        message = f"{period_icon} Статистика за {period_name}:\n\n"
-
-        # Расходы
-        if stats["expenses"]:
-            message += "📤 Расходы:\n"
-            for category, amount in stats['expenses']:
-                message += f"• {category}: {amount:.2f} ₽\n"
-
-            message += f"\n💰 Итого расходов за {period_name.split(' ')[0]}: {stats['total_expenses']:.2f} ₽\n\n"
-        else:
-            message += f"📤 Расходов за {period_name.split(' ')[0]} не было\n\n"
+        # Формируем сообщение, заголовок
+        message = f"───────── • ✦ • ─────────\n"
+        message += f"                    Статистика\n"
+        message += f"       {period_name}\n"
+        message += f"───────── • ✦ • ─────────\n\n"
 
         # Доходы
         if stats["income"]:
-            message += "📥 Доходы:\n"
+            message += "📈 Доходы:\n"
             for category, amount in stats['income']:
-                message += f"• {category}: {amount:.2f} ₽\n"
+                message += f"      • {category}: {amount:.2f} ₽\n\n"
+            message += f"      • Итого: {stats['total_income']:.2f} ₽\n\n"
+        else:                           #{period_name.split(' ')[0]}: 
+            message += f"      • Доходов за {period_name.split(' ')[0]} не было\n\n"
 
-            message += f"\n💳 Итого доходов за {period_name.split(' ')[0]}: {stats['total_income']:.2f} ₽\n\n"
+        # Расходы
+        if stats["expenses"]:
+            message += "📉 Расходы:\n"
+            for category, amount in stats['expenses']:
+                message += f"      • {category}: {amount:.2f} ₽\n\n"
+            message += f"      • Итого: {stats['total_expenses']:.2f} ₽\n\n"
         else:
-            message += f"📥 Доходов за {period_name.split(' ')[0]} нет\n\n"
+            message += f"      • Расходов за {period_name.split(' ')[0]} не было\n\n"
 
-        message += f"📥 Чистый доход за сегодня: {net_income_text}\n\n"
+        # Убыток/доход
+        if stats["daily_balance"]:
+            net_income = stats["daily_balance"]
+            if net_income < 0:
+                message += f"🔻 Убыток: {net_income:.2f} ₽\n\n"
+            elif net_income > 0:
+                message += f"🔺️ Прибыль: {net_income:.2f} ₽\n\n"
+            else:
+                message += f"Сегодня вы вышли в ноль\n\n"
 
         # Итог и валюты
         current_balance = get_user_balance(chat_id)
-        message += f"Главное меню\n\n💵 Баланс: {current_balance:.2f} ₽\n\n"
+
+        currencies = get_user_currencies(chat_id)
+        currency_text = ""
+
+        for currency in currencies:
+            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
+            currency_text += f"  |  {currency.amount:.2f} {symbol}"
+            
         if currency_text:
-            message += currency_text
+            message = f"───────── • ✦ • ─────────\n"
+            message += f"                        Баланс"
+            message += f"  {current_balance:.2f} ₽{currency_text}"
+            message = f"───────── • ✦ • ─────────\n"
+        else:
+            message = f"───────── • ✦ • ─────────\n"
+            message += f"                        Баланс"
+            message += f"                      {current_balance:.2f} ₽"
+            message = f"───────── • ✦ • ─────────\n"
 
         await update.message.reply_text(message, reply_markup=get_statistics_keyboard())
         logger.info(f"✅ User {chat_id} viewed {period_type} statistics")
