@@ -1,6 +1,6 @@
 <div align="center">
 
-### **Hand of Midas - вайбкод бот для управления личными финансами**
+### **Hand of Midas - вайбкод шаблон бота для управления личными финансами**
 
 <img width="1250" height="625" alt="image" src="https://github.com/user-attachments/assets/64312f29-eb51-4c6d-ad3f-cb9fb1ee8212" />
 
