@@ -34,10 +34,8 @@
 
 ## 🛠 Технологии
 
-- **Backend**: Python 3.11 + SQLAlchemy + python-telegram-bot
-- **Database**: PostgreSQL 15
-- **Containerization**: Docker + Docker Compose
-- **Architecture**: Модульная структура с разделением ответственности 
+- **Бэкенд**: Python 3.11 + SQLAlchemy + PostgreSQL 15 + python-telegram-bot + Docker
+- **Фронтенд**: Это что такое
 
 ## 📦 Установка
 
