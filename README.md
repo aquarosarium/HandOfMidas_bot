@@ -7,7 +7,7 @@
 
 ### **Hand of Midas - вайбкод бот для управления личными финансами**
 
-<img width="721" height="721" alt="image" src="https://github.com/user-attachments/assets/f8abdc40-334d-47c0-9756-50cbafc750de" />
+<img width="2500" height="1250" alt="image" src="https://github.com/user-attachments/assets/64312f29-eb51-4c6d-ad3f-cb9fb1ee8212" />
 
 
 [Особенности](#-особенности) • [Установка](#-установка) • [Использование](#-использование) • [Команды](#-команды)
