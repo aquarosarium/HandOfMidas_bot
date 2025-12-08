@@ -2,8 +2,7 @@
 
 ### **Hand of Midas - вайбкод бот для управления личными финансами**
 
-<img width="2500" height="1250" alt="image" src="https://github.com/user-attachments/assets/64312f29-eb51-4c6d-ad3f-cb9fb1ee8212" />
-
+<img width="1250" height="625" alt="image" src="https://github.com/user-attachments/assets/64312f29-eb51-4c6d-ad3f-cb9fb1ee8212" />
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-green.svg)
