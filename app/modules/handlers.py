@@ -180,13 +180,13 @@ async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
     currencies_count = len(currencies)
     await update.message.reply_text(
         f"───────── • ✦ • ─────────\n"
-        f"                     Настройки\n"
+        f"                Настройки\n"
         f"───────── • ✦ • ─────────\n\n"
         f"Текущий баланс: {current_balance:.2f} ₽\n"
         f"Количество операций: {transactions_count}\n"
         f"Количество валют: {currencies_count}\n\n"
         f"───────── • ✦ • ─────────\n"
-        f"Выберите действие:"
+        f"Выберите действие:\n"
         f"───────── • ✦ • ─────────\n",
         reply_markup=get_settings_keyboard(),
     )
@@ -198,8 +198,8 @@ async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
     message = "───────── • ✦ • ─────────\n"
-    message = "         Управление балансом\n"
-    message = "───────── • ✦ • ─────────\n\n"
+    message += "         Управление балансом\n"
+    message += "───────── • ✦ • ─────────\n\n"
 
     if current_balance:
         message += f"Текущий баланс: {current_balance:.2f} ₽\n"
@@ -207,9 +207,9 @@ async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         message += "У вас нет денег на счету\n"
 
-    message = "───────── • ✦ • ─────────\n\n"
+    message += "───────── • ✦ • ─────────\n\n"
     message += "Выберите дальнейшее действие:\n\n"
-    message = "───────── • ✦ • ─────────"
+    message += "───────── • ✦ • ─────────"
 
     await update.message.reply_text(message, reply_markup=get_balance_keyboard())
 
@@ -394,8 +394,8 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
     chat_id = update.effective_chat.id
     currencies = get_user_currencies(chat_id)
     message = "───────── • ✦ • ─────────\n"
-    message = "         Управление валютами\n"
-    message = "───────── • ✦ • ─────────\n\n"
+    message += "         Управление валютами\n"
+    message += "───────── • ✦ • ─────────\n\n"
     if currencies:
         message += "Ваши валютные балансы:\n"
         for currency in currencies:
@@ -404,9 +404,9 @@ async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYP
         message += "\n"
     else:
         message += "У вас пока нет валютных балансов\n\n"
-    message = "───────── • ✦ • ─────────\n\n"
+    message += "───────── • ✦ • ─────────\n\n"
     message += "Нажмите на валюту чтобы открыть её баланс:\n\n"
-    message = "───────── • ✦ • ─────────"
+    message += "───────── • ✦ • ─────────"
 
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
@@ -545,7 +545,8 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         stats = calculate_statistics(transactions)  # Вызываем функцию подсчёта статистики
 
         # Формируем сообщение, заголовок
-        message = f"───────── • ✦ • ─────────\n"
+        message=""
+        message += f"───────── • ✦ • ─────────\n"
         message += f"                    Статистика\n"
         message += f"       {period_name}\n"
         message += f"───────── • ✦ • ─────────\n\n"
@@ -554,8 +555,8 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         if stats["income"]:
             message += "📈 Доходы:\n"
             for category, amount in stats['income']:
-                message += f"      • {category}: {amount:.2f} ₽\n\n"
-            message += f"      • Итого: {stats['total_income']:.2f} ₽\n\n"
+                message += f"      • {category}: {amount:.2f} ₽\n"
+            message += f"\n      • Итого: {stats['total_income']:.2f} ₽\n\n"
         else:                           #{period_name.split(' ')[0]}: 
             message += f"      • Доходов за {period_name.split(' ')[0]} не было\n\n"
 
@@ -563,8 +564,8 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         if stats["expenses"]:
             message += "📉 Расходы:\n"
             for category, amount in stats['expenses']:
-                message += f"      • {category}: {amount:.2f} ₽\n\n"
-            message += f"      • Итого: {stats['total_expenses']:.2f} ₽\n\n"
+                message += f"      • {category}: {amount:.2f} ₽\n"
+            message += f"\n      • Итого: {stats['total_expenses']:.2f} ₽\n\n"
         else:
             message += f"      • Расходов за {period_name.split(' ')[0]} не было\n\n"
 
@@ -589,15 +590,15 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
             currency_text += f"  |  {currency.amount:.2f} {symbol}"
 
         if currency_text:
-            message = f"───────── • ✦ • ─────────\n"
-            message += f"                        Баланс"
-            message += f"  {current_balance:.2f} ₽{currency_text}"
-            message = f"───────── • ✦ • ─────────\n"
+            message += f"───────── • ✦ • ─────────\n"
+            message += f"                        Баланс\n"
+            message += f"  {current_balance:.2f} ₽{currency_text}\n"
+            message += f"───────── • ✦ • ─────────\n"
         else:
-            message = f"───────── • ✦ • ─────────\n"
+            message += f"───────── • ✦ • ─────────\n"
             message += f"                        Баланс"
-            message += f"                      {current_balance:.2f} ₽"
-            message = f"───────── • ✦ • ─────────\n"
+            message += f"                        {current_balance:.2f} ₽"
+            message += f"───────── • ✦ • ─────────\n"
 
         await update.message.reply_text(message, reply_markup=get_statistics_keyboard())
         logger.info(f"✅ User {chat_id} viewed {period_type} statistics")
@@ -648,15 +649,15 @@ def get_period_dates(period_type):
     if period_type == "day": 
         start_date = today
         end_date = today
-        period_name = f"Сегодня ({start_date} - {end_date})"
+        period_name = f"{start_date}"
     elif period_type == "week":
         start_date = today - timedelta(days=7)
         end_date = today
-        period_name = f"Неделю ({start_date} - {end_date})"
+        period_name = f"({start_date} - {end_date})"
     elif period_type == "month":
         start_date = today.replace(day=1)
         end_date = today
-        period_name = f"Месяц ({start_date} - {end_date})"
+        period_name = f"({start_date} - {end_date})"
 
     return start_date, end_date, period_name
 

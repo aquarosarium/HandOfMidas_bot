@@ -15,6 +15,7 @@ from modules.handlers import (
     start,
     start_reset_balance,
     start_set_balance,
+    create_currency_balance,
 )
 from telegram.ext import (
     Application,
