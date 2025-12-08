@@ -249,15 +249,12 @@ def delete_all_user_data(chat_id):
 
 ''' Функции для работы с валютами '''
 
-# Получение списка валют юзера
 def get_user_currencies(chat_id):
     """Получить все валютные балансы пользователя"""
     try:
         session = Session()
         currencies = (
-            session.query(UserCurrency)
-            .filter(UserCurrency.chat_id == chat_id)
-            .all()
+            session.query(UserCurrency).filter(UserCurrency.chat_id == chat_id).all()
         )
         session.close()
         return currencies
@@ -265,41 +262,7 @@ def get_user_currencies(chat_id):
         logger.error(f"❌ Error getting user currencies: {e}")
         raise
 
-# Получение доллара юзера
-def get_user_usd(chat_id):
-    """Получить все валютные балансы пользователя"""
-    try:
-        session = Session()
-        currencies = (
-            session.query(UserCurrency)
-            .filter(UserCurrency.chat_id == chat_id)
-            .filter(UserCurrency.currency == 'USD')
-            .all()
-        )
-        session.close()
-        return currencies
-    except OperationalError as e:
-        logger.error(f"❌ Error getting user currencies: {e}")
-        raise
 
-# Получение йен юзера
-def get_user_cny(chat_id):
-    """Получить все валютные балансы пользователя"""
-    try:
-        session = Session()
-        currencies = (
-            session.query(UserCurrency)
-            .filter(UserCurrency.chat_id == chat_id)
-            .filter(UserCurrency.currency == 'CNY')
-            .all()
-        )
-        session.close()
-        return currencies
-    except OperationalError as e:
-        logger.error(f"❌ Error getting user currencies: {e}")
-        raise
-
-# Обновление валюты
 def update_user_currency(chat_id, currency, amount):
     """Обновить или создать валютный баланс пользователя"""
     try:
@@ -340,28 +303,6 @@ def update_user_currency(chat_id, currency, amount):
         logger.error(f"❌ Error updating user currency: {e}")
         raise
 
-# Удаление валюты
-def delete_user_currency(chat_id, currency):
-    try:
-        session = Session()
-
-        deleted = (
-            session.query(UserCurrency)
-            .filter(UserCurrency.chat_id == chat_id, UserCurrency.currency == currency)
-            .delete()
-        )
-
-        session.commit()
-        session.close()
-
-        logger.info(f"✅ User {chat_id} {currency} balance deleted")
-        return deleted
-
-    except OperationalError as e:
-        logger.error(f"❌ Error deleting user currency: {e}")
-        raise
-
-# Создание валютного баланса
 def create_currency_balance(chat_id, currency):
     """Создает валютный баланс пользователя с нулевым значением"""
     try:
@@ -393,4 +334,25 @@ def create_currency_balance(chat_id, currency):
 
     except OperationalError as e:
         logger.error(f"❌ Error creating currency balance: {e}")
+        raise
+
+def delete_user_currency(chat_id, currency):
+    """Удалить валютный баланс пользователя"""
+    try:
+        session = Session()
+
+        deleted = (
+            session.query(UserCurrency)
+            .filter(UserCurrency.chat_id == chat_id, UserCurrency.currency == currency)
+            .delete()
+        )
+
+        session.commit()
+        session.close()
+
+        logger.info(f"✅ User {chat_id} {currency} balance deleted")
+        return deleted
+
+    except OperationalError as e:
+        logger.error(f"❌ Error deleting user currency: {e}")
         raise

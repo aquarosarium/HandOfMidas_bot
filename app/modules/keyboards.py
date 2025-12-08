@@ -39,26 +39,21 @@ def get_currencies_keyboard():
     keyboard = [
         [KeyboardButton("💵 USD")],
         [KeyboardButton("💴 CNY")],
+        [KeyboardButton("🗑️ Удалить валюту")],
         [KeyboardButton("⬅️ Назад")],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
-# Меню доллара
-def get_usd_keyboard():
-    keyboard = [
-        [KeyboardButton("💵 Добавить USD")],
-    #    [KeyboardButton("🗑️ Удалить USD")],
-        [KeyboardButton("⬅️ Меню валют")],
-    ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+def get_delete_currency_keyboard(user_currencies):
+    """Создает клавиатуру для удаления валют на основе имеющихся у пользователя"""
+    keyboard = []
+    for currency in user_currencies:
+        if currency.currency == "USD":
+            keyboard.append([KeyboardButton("❌ Удалить USD")])
+        elif currency.currency == "CNY":
+            keyboard.append([KeyboardButton("❌ Удалить CNY")])
 
-# Меню юани
-def get_cny_keyboard():
-    keyboard = [
-        [KeyboardButton("💴 Добавить CNY")],
-    #    [KeyboardButton("🗑️ Удалить CNY")],
-        [KeyboardButton("⬅️ Меню валют")],
-    ]
+    keyboard.append([KeyboardButton("⬅️ Назад")])
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Клавиатура для отмены действия

@@ -13,8 +13,6 @@ from modules.database import (
     get_user_currencies,
     reset_user_balance,
     update_user_currency,
-    get_user_usd,
-    get_user_cny,
 )
 from modules.keyboards import (
     get_main_keyboard,
@@ -22,8 +20,7 @@ from modules.keyboards import (
     get_settings_keyboard,
     get_balance_keyboard,
     get_currencies_keyboard,
-    get_usd_keyboard,
-    get_cny_keyboard,
+    get_delete_currency_keyboard,
     get_cancel_keyboard,
     get_confirmation_keyboard,
 )
@@ -35,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 SETTING_BALANCE, RESETTING_BALANCE, DELETING_ALL_DATA, SETTING_CURRENCY = range(4)
 
-# Словарь символов валют
 CURRENCY_SYMBOLS = {"USD": "$", "CNY": "¥"}
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -45,12 +40,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_balance = get_user_balance(chat_id)
 
         await update.message.reply_text(
-            f'Привет! Отправь операцию в формате: "Категория, Сумма"\n'
-            f'Например: "Продукты, 1500" - для расходов\n'
-            f'Или: "Зарплата, 50000" - для доходов\n\n'
-            f"Доходы: Зарплата, Аванс, Пополнение\n\n"
-            f"Текущий баланс: {current_balance:.2f} руб.\n\n"
-            f"Используй кнопки для просмотра статистики 📊 или настроек ⚙️",
+            f"───────── • ✦ • ─────────\n",
+            f'Привет! Ты попал в Чемпионов Фарма"\n',
+            f"───────── • ✦ • ─────────\n\n",
+            f'Чемпионы фарма - система учёта твоих финансов\nна основе self-host системы HandOfMidas\n',
+            f'Просто начни, это не так сложно\n',
+            f"Вписывай свои траты по принципу 'категория, сумма'\n",
+            f"Используй кнопки для просмотра статистики 📊 или настроек ⚙️\n\n",
+            f"Код проекта можно найти [тут](https://github.com/aquarosarium/HandOfMidas_bot)",
+            f"Техподдержка проекта: [Анжелика](https://t.me/@a_kalinina5)",
             reply_markup=get_main_keyboard(),
         )
         logger.info(f"✅ User {chat_id} started the bot")
@@ -75,13 +73,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔄 Сбросить баланс": start_reset_balance,
         #
         "💱 Валюты": show_currencies_menu,
-        "💵 USD": lambda u, c: show_usd_menu(u, c, "USD"),
-        "💵 Добавить USD": lambda u, c: set_user_currency(u, c, currency="USD"),
-        "🗑️ Удалить USD": lambda u, c: delete_user_currency(chat_id, "USD"),
-        "💴 CNY": lambda u, c: show_cny_menu(u, c),
-        "💴 Добавить CNY": lambda u, c: set_user_currency(u, c, currency="CNY"),
-        "🗑️ Удалить CNY": delete_user_currency(chat_id, "CNY"),
-        "⬅️ Меню валют": show_currencies_menu,
+        "💵 USD": lambda u, c: start_set_currency(u, c, "USD"),
+        "💴 CNY": lambda u, c: start_set_currency(u, c, "CNY"),
+        "🗑️ Удалить валюту": show_delete_currency_menu,
+        "❌ Удалить USD": lambda u, c: delete_currency(u, c, "USD"),
+        "❌ Удалить CNY": lambda u, c: delete_currency(u, c, "CNY"),
         #
         "🗑️ Сбросить все данные": start_delete_all_data,
         "⬅️ Назад": show_main_menu,
@@ -182,13 +178,16 @@ async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Получаем количество валют пользователя
     currencies = get_user_currencies(chat_id)
     currencies_count = len(currencies)
-
     await update.message.reply_text(
-        f"⚙️ Настройки\n\n"
-        f"Текущий баланс: {current_balance:.2f} руб.\n"
+        f"───────── • ✦ • ─────────\n"
+        f"                Настройки\n"
+        f"───────── • ✦ • ─────────\n\n"
+        f"Текущий баланс: {current_balance:.2f} ₽\n"
         f"Количество операций: {transactions_count}\n"
         f"Количество валют: {currencies_count}\n\n"
-        f"Выберите действие:",
+        f"───────── • ✦ • ─────────\n"
+        f"Выберите действие:\n"
+        f"───────── • ✦ • ─────────\n",
         reply_markup=get_settings_keyboard(),
     )
 
@@ -198,8 +197,9 @@ async def show_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     current_balance = get_user_balance(chat_id)
-
-    message = "💱 Управление балансом\n\n"
+    message = "───────── • ✦ • ─────────\n"
+    message += "         Управление балансом\n"
+    message += "───────── • ✦ • ─────────\n\n"
 
     if current_balance:
         message += f"Текущий баланс: {current_balance:.2f} ₽\n"
@@ -207,7 +207,9 @@ async def show_balance_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         message += "У вас нет денег на счету\n"
 
-    message += "Выберите дальнейшее действие:"
+    message += "───────── • ✦ • ─────────\n\n"
+    message += "Выберите дальнейшее действие:\n\n"
+    message += "───────── • ✦ • ─────────"
 
     await update.message.reply_text(message, reply_markup=get_balance_keyboard())
 
@@ -388,95 +390,58 @@ async def cancel_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ''' Функции для работы с валютами '''
 
-# Меню валют
-async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str = "USD"):
+async def show_currencies_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     currencies = get_user_currencies(chat_id)
-
-    message = "💱 Управление валютами\n\n"
-
+    message = "───────── • ✦ • ─────────\n"
+    message += "         Управление валютами\n"
+    message += "───────── • ✦ • ─────────\n\n"
     if currencies:
         message += "Ваши валютные балансы:\n"
         for currency in currencies:
             symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
+            message += f"      • {currency.currency}: {currency.amount:.2f} {symbol}\n"
         message += "\n"
     else:
         message += "У вас пока нет валютных балансов\n\n"
-
-    message += "Нажмите на валюту чтобы открыть её баланс:"
+    message += "───────── • ✦ • ─────────\n\n"
+    message += "Нажмите на валюту чтобы открыть её баланс:\n\n"
+    message += "───────── • ✦ • ─────────"
 
     await update.message.reply_text(message, reply_markup=get_currencies_keyboard())
 
 
-async def show_currency(update: Update):
+async def show_delete_currency_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    currencies = get_user_usd(chat_id)
-    if currencies:
-        message = "Ваш баланс:"
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
-        message += "\n"
-    else:
-        message = "У вас нет валюты на этом счету\n\n"
-    return message
+    currencies = get_user_currencies(chat_id)
 
-# Меню доллара
-async def show_usd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
-    chat_id = update.effective_chat.id
-
-    message = "Меню управления USD счётом\n\n"
-    message += await show_currency(update)
-    message += "Выберите дальнейшие действия:"
-
-    await update.message.reply_text(message, reply_markup=get_usd_keyboard())
-
-# Меню йены
-async def show_cny_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    currencies = get_user_cny(chat_id)
-
-    message = "Меню управления CNY счётом\n\n"
-
-    if currencies:
-        message += "Ваш баланс:"
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            message += f"• {currency.currency}: {currency.amount:.2f}{symbol}\n"
-        message += "\n"
-    else:
-        message += "У вас нет валюты на этом счету"
-
-    message += "Выберите дальнейшие действия:"
-
-    await update.message.reply_text(message, reply_markup=get_cny_keyboard())
-
-# Установка счёта
-async def set_user_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
-    chat_id = update.effective_chat.id
-    
-    context.user_data["setting_currency"] = currency
-
-    try:
-        current_balance = create_currency_balance(chat_id, currency)
-        symbol = CURRENCY_SYMBOLS.get(currency, currency)
+    if not currencies:
         await update.message.reply_text(
-            f"💵 Установка баланса {currency}\n\n"
-            f"Введите сумму в {currency} (например: 100 или 150.50):\n"
-            f"Или нажмите '❌ Отмена' для возврата",
-            reply_markup=get_cancel_keyboard(),
-        )
-        logger.info(f"✅ User {chat_id} opened {currency} balance: {current_balance}")
-
-    except Exception as e:
-        logger.error(f"Error opening {currency} balance for user {chat_id}: {e}")
-        await update.message.reply_text(
-            f"❌ Произошла ошибка при открытии баланса {currency}",
+            "❌ У вас нет валютных балансов для удаления",
             reply_markup=get_currencies_keyboard(),
         )
+        return
 
-# Открытие валютного счёта. Тоже непонятно
+    await update.message.reply_text(
+        reply_markup=get_delete_currency_keyboard(currencies),
+    )
+
+
+async def start_set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
+    chat_id = update.effective_chat.id
+
+    context.user_data["setting_currency"] = currency
+
+    symbol = CURRENCY_SYMBOLS.get(currency, currency)
+
+    await update.message.reply_text(
+        f"💵 Установка баланса {currency}\n\n"
+        f"Введите сумму в {currency} (например: 100 или 150.50):\n"
+        f"Или нажмите '❌ Отмена' для возврата",
+        reply_markup=get_cancel_keyboard(),
+    )
+
+
 async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -502,7 +467,7 @@ async def open_currency_balance(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_currencies_keyboard(),
         )
 
-# Ввод валюты. Нужно ли оно?
+
 async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -541,7 +506,7 @@ async def process_currency_input(update: Update, context: ContextTypes.DEFAULT_T
         )
         context.user_data.pop("setting_currency", None)
 
-# Удаление валюты
+
 async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, currency: str):
     chat_id = update.effective_chat.id
 
@@ -567,7 +532,6 @@ async def delete_currency(update: Update, context: ContextTypes.DEFAULT_TYPE, cu
             reply_markup=get_currencies_keyboard(),
         )
 
-
 ''' Функции для статистики '''
 
 # Отрисовка статистики
@@ -576,51 +540,65 @@ async def show_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE, pe
         chat_id = update.effective_chat.id
 
         start_date, end_date, period_name = get_period_dates(period_type)   # Получаем даты периода
-        period_icon = get_period_icon(period_type)  # Получаем иконки периоды
 
         transactions = get_transactions_by_period(chat_id, start_date, end_date) # Получаем транзакции за период
         stats = calculate_statistics(transactions)  # Вызываем функцию подсчёта статистики
 
-        net_income = stats["daily_balance"] #
-        net_income_text = f"{net_income:.2f} ₽"
-
-        # Получаем валютные балансы
-        currencies = get_user_currencies(chat_id)
-        currency_text = ""
-        for currency in currencies:
-            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
-            currency_text += f"💵 {currency.currency}: {currency.amount:.2f}{symbol}\n"
-
-        # Формируем сообщение
-        message = f"{period_icon} Статистика за {period_name}:\n\n"
-
-        # Расходы
-        if stats["expenses"]:
-            message += "📤 Расходы:\n"
-            for category, amount in stats['expenses']:
-                message += f"• {category}: {amount:.2f} ₽\n"
-
-            message += f"\n💰 Итого расходов за {period_name.split(' ')[0]}: {stats['total_expenses']:.2f} ₽\n\n"
-        else:
-            message += f"📤 Расходов за {period_name.split(' ')[0]} не было\n\n"
+        # Формируем сообщение, заголовок
+        message=""
+        message += f"───────── • ✦ • ─────────\n"
+        message += f"                    Статистика\n"
+        message += f"       {period_name}\n"
+        message += f"───────── • ✦ • ─────────\n\n"
 
         # Доходы
         if stats["income"]:
-            message += "📥 Доходы:\n"
+            message += "📈 Доходы:\n"
             for category, amount in stats['income']:
-                message += f"• {category}: {amount:.2f} ₽\n"
+                message += f"      • {category}: {amount:.2f} ₽\n"
+            message += f"\n      • Итого: {stats['total_income']:.2f} ₽\n\n"
+        else:                           #{period_name.split(' ')[0]}: 
+            message += f"      • Доходов за {period_name.split(' ')[0]} не было\n\n"
 
-            message += f"\n💳 Итого доходов за {period_name.split(' ')[0]}: {stats['total_income']:.2f} ₽\n\n"
+        # Расходы
+        if stats["expenses"]:
+            message += "📉 Расходы:\n"
+            for category, amount in stats['expenses']:
+                message += f"      • {category}: {amount:.2f} ₽\n"
+            message += f"\n      • Итого: {stats['total_expenses']:.2f} ₽\n\n"
         else:
-            message += f"📥 Доходов за {period_name.split(' ')[0]} нет\n\n"
+            message += f"      • Расходов за {period_name.split(' ')[0]} не было\n\n"
 
-        message += f"📥 Чистый доход за сегодня: {net_income_text}\n\n"
+        # Убыток/доход
+        if stats["daily_balance"]:
+            net_income = stats["daily_balance"]
+            if net_income < 0:
+                message += f"🔻 Убыток: {net_income:.2f} ₽\n\n"
+            elif net_income > 0:
+                message += f"🔺️ Прибыль: {net_income:.2f} ₽\n\n"
+            else:
+                message += f"Сегодня вы вышли в ноль\n\n"
 
         # Итог и валюты
         current_balance = get_user_balance(chat_id)
-        message += f"Главное меню\n\n💵 Баланс: {current_balance:.2f} ₽\n\n"
+
+        currencies = get_user_currencies(chat_id)
+        currency_text = ""
+
+        for currency in currencies:
+            symbol = CURRENCY_SYMBOLS.get(currency.currency, currency.currency)
+            currency_text += f"  |  {currency.amount:.2f} {symbol}"
+
         if currency_text:
-            message += currency_text
+            message += f"───────── • ✦ • ─────────\n"
+            message += f"                        Баланс\n"
+            message += f"  {current_balance:.2f} ₽{currency_text}\n"
+            message += f"───────── • ✦ • ─────────\n"
+        else:
+            message += f"───────── • ✦ • ─────────\n"
+            message += f"                        Баланс"
+            message += f"                        {current_balance:.2f} ₽"
+            message += f"───────── • ✦ • ─────────\n"
 
         await update.message.reply_text(message, reply_markup=get_statistics_keyboard())
         logger.info(f"✅ User {chat_id} viewed {period_type} statistics")
@@ -671,15 +649,15 @@ def get_period_dates(period_type):
     if period_type == "day": 
         start_date = today
         end_date = today
-        period_name = f"Сегодня ({start_date} - {end_date})"
+        period_name = f"{start_date}"
     elif period_type == "week":
         start_date = today - timedelta(days=7)
         end_date = today
-        period_name = f"Неделю ({start_date} - {end_date})"
+        period_name = f"({start_date} - {end_date})"
     elif period_type == "month":
         start_date = today.replace(day=1)
         end_date = today
-        period_name = f"Месяц ({start_date} - {end_date})"
+        period_name = f"({start_date} - {end_date})"
 
     return start_date, end_date, period_name
 
